@@ -24,6 +24,8 @@
 # if defined(DLLBUILD)
 /* define DLLBUILD when building the DLL */
 #  define MODBUS_API __declspec(dllexport)
+# elif defined(STATICBUILD)
+# define MODBUS_API
 # else
 #  define MODBUS_API __declspec(dllimport)
 # endif

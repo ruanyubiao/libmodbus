@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright © 2001-2011 Stéphane Raimbault <stephane.raimbault@gmail.com>
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -267,6 +267,29 @@ static void _modbus_rtu_ioctl_rts(modbus_t *ctx, int on)
 }
 #endif
 
+static ssize_t write_data(int __fd, const void *__buf, size_t __n){
+
+#ifdef ARM_HISI
+    ssize_t size;
+    printf("rtu: hisi device write\n");
+    //485是半双工，置为发送状态
+    system("echo 1 > /sys/class/gpio/gpio42/value");
+
+    size = write(__fd, __buf, __n);
+
+    //等待数据输出完毕
+    tcdrain(__fd);
+    //清空输入输出缓冲区
+    tcflush(__fd, TCIOFLUSH);
+    //485是半双工，置为接收状态
+    system("echo 0 > /sys/class/gpio/gpio42/value");
+    return size;
+
+#else
+    return write(__fd, __buf, __n);
+#endif
+}
+
 static ssize_t _modbus_rtu_send(modbus_t *ctx, const uint8_t *req, int req_length)
 {
 #if defined(_WIN32)
@@ -286,7 +309,7 @@ static ssize_t _modbus_rtu_send(modbus_t *ctx, const uint8_t *req, int req_lengt
         ctx_rtu->set_rts(ctx, ctx_rtu->rts == MODBUS_RTU_RTS_UP);
         usleep(ctx_rtu->rts_delay);
 
-        size = write(ctx->s, req, req_length);
+        size = write_data(ctx->s, req, req_length);
 
         usleep(ctx_rtu->onebyte_time * req_length + ctx_rtu->rts_delay);
         ctx_rtu->set_rts(ctx, ctx_rtu->rts != MODBUS_RTU_RTS_UP);
@@ -294,7 +317,7 @@ static ssize_t _modbus_rtu_send(modbus_t *ctx, const uint8_t *req, int req_lengt
         return size;
     } else {
 #endif
-        return write(ctx->s, req, req_length);
+        return write_data(ctx->s, req, req_length);
 #if HAVE_DECL_TIOCM_RTS
     }
 #endif
@@ -1222,6 +1245,18 @@ modbus_t* modbus_new_rtu(const char *device,
                          int baud, char parity, int data_bit,
                          int stop_bit)
 {
+#ifdef ARM_HISI
+
+    system("himm 0x1204008C 1");
+    system("himm 0x12040094 1");
+
+    system("himm 0x12040090 0");
+    system("echo 42 > /sys/class/gpio/export");
+    system("echo out > /sys/class/gpio/gpio42/direction");
+    system("echo 0 > /sys/class/gpio/gpio42/value");
+
+#endif
+
     modbus_t *ctx;
     modbus_rtu_t *ctx_rtu;
 
