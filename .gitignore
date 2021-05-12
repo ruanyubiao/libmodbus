@@ -47,10 +47,12 @@ doc/*.7
 
 
 .vs
-/src/win32/Release
+Release
+Debug
 /src/win32/x64
 /src/win32/modbus.pdb
 /src/win32/modbus.exp
 /src/win32/modbus.lib
+/src/win32/modbus.res
 
 
