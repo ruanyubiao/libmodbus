@@ -17,9 +17,9 @@ autoheader
 ### ubuntu
 ./configure --enable-static
 ### 安霸
-./configure --enable-static CC=aarch64-linux-gnu-gcc --host=aarch64-linux-gnu --prefix=/usr/local/aarch64-linux-gnu
+env CFLAGS="-DPLAT_AMBA -fPIC -g -O2" ./configure --enable-static CC=aarch64-linux-gnu-gcc --host=aarch64-linux-gnu --prefix=/usr/local/aarch64-linux-gnu
 ### 海思
-env CFLAGS="-DARM_HISI -fPIC -g -O2" ./configure --enable-static --build=x86_64-linux-gnu --host=arm-hisiv500-linux --prefix=/usr/local/arm-hisiv500-linux
+env CFLAGS="-DPLAT_HISI -fPIC -g -O2" ./configure --enable-static --build=x86_64-linux-gnu --host=arm-hisiv500-linux --prefix=/usr/local/arm-hisiv500-linux
 
 
 ## windows

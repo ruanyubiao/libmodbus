@@ -269,25 +269,24 @@ static void _modbus_rtu_ioctl_rts(modbus_t *ctx, int on)
 
 static ssize_t write_data(int __fd, const void *__buf, size_t __n){
 
-#ifdef ARM_HISI
     ssize_t size;
-    printf("rtu: hisi device write\n");
-    //485是半双工，置为发送状态
+
+#if defined(PLAT_HISI)
     system("echo 1 > /sys/class/gpio/gpio42/value");
-
     size = write(__fd, __buf, __n);
-
-    //等待数据输出完毕
     tcdrain(__fd);
-    //清空输入输出缓冲区
     tcflush(__fd, TCIOFLUSH);
-    //485是半双工，置为接收状态
     system("echo 0 > /sys/class/gpio/gpio42/value");
-    return size;
-
+#elif defined(PLAT_AMBA)
+    system("/usr/local/bin/amba_debug -g 71 -d 1");
+    size = write(__fd, __buf, __n);
+    tcdrain(__fd);
+    tcflush(__fd, TCIOFLUSH);
+    system("/usr/local/bin/amba_debug -g 71 -d 0");
 #else
-    return write(__fd, __buf, __n);
+    size = write(__fd, __buf, __n);
 #endif
+    return size;
 }
 
 static ssize_t _modbus_rtu_send(modbus_t *ctx, const uint8_t *req, int req_length)
@@ -1245,8 +1244,7 @@ modbus_t* modbus_new_rtu(const char *device,
                          int baud, char parity, int data_bit,
                          int stop_bit)
 {
-#ifdef ARM_HISI
-
+#if defined(PLAT_HISI)
     system("himm 0x1204008C 1");
     system("himm 0x12040094 1");
 
@@ -1254,7 +1252,9 @@ modbus_t* modbus_new_rtu(const char *device,
     system("echo 42 > /sys/class/gpio/export");
     system("echo out > /sys/class/gpio/gpio42/direction");
     system("echo 0 > /sys/class/gpio/gpio42/value");
-
+#elif defined(PLAT_AMBA)
+    system("/usr/local/bin/amba_debug -g 71 -d 0");
+#else
 #endif
 
     modbus_t *ctx;
